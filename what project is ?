@@ -1,0 +1,269 @@
+# Student Accommodation Portal (Final Year Project)
+
+This project is a role-based web platform where:
+
+1. Students discover accommodation and food services near universities.
+2. Property owners register and publish listings.
+3. A chatbot helps users with navigation and listing discovery.
+
+Primary goal: give internal and external examiners a complete, easy-to-follow view of how to run and evaluate the system.
+
+## 1. What The System Includes
+
+- Next.js application with App Router (frontend + backend routes in one project)
+- PostgreSQL database using Prisma ORM
+- Authentication using NextAuth (credentials provider)
+- Role-based flow:
+   - Student: search and explore accommodation/food listings
+   - Property Owner: create and manage listings
+- Chatbot module with:
+   - Database-backed assistant route for structured listing lookup
+   - Optional Ollama/LLaMA route for local LLM text generation
+
+## 2. Tech Stack
+
+- Framework: Next.js 13
+- Language: TypeScript
+- UI: Tailwind CSS + component library under components/ui
+- Database: PostgreSQL
+- ORM: Prisma
+- Auth: NextAuth
+- Optional local LLM runtime: Ollama (model: llama3)
+
+## 3. Project Layout (Important Paths)
+
+- App root (run all commands here):
+   - student_accommodation_portal_full_chat_working_llama/app
+- API routes:
+   - app/api/auth/[...nextauth]/route.ts
+   - app/api/signup/route.ts
+   - app/api/listings/accommodation/route.ts
+   - app/api/listings/food/route.ts
+   - app/api/assistant/route.ts
+   - app/api/chat/route.ts
+- Prisma schema:
+   - prisma/schema.prisma
+- Seed script:
+   - scripts/seed.ts
+
+## 4. End-To-End Flow (Examiner View)
+
+### 4.1 User Entry Flow
+
+1. User opens / (landing page).
+2. If already authenticated:
+    - STUDENT -> redirected to /student/dashboard
+    - PROPERTY_OWNER -> redirected to /owner/dashboard
+3. If not authenticated, user can login/register.
+
+### 4.2 Authentication Flow
+
+1. Registration page submits form-data to POST /api/signup.
+2. Backend validates, hashes password, creates user in database.
+3. Login uses NextAuth credentials provider.
+4. Session JWT stores id, userType, and phone.
+5. Protected pages verify session and role before rendering.
+
+### 4.3 Student Functional Flow
+
+1. Student opens /student/search.
+2. Frontend applies filters and calls:
+    - GET /api/listings/accommodation
+    - GET /api/listings/food
+3. Results return from Prisma queries.
+4. Student reviews listing details and owner contact info.
+
+### 4.4 Owner Functional Flow
+
+1. Owner logs in and opens /owner/add-listing.
+2. Owner chooses listing type:
+    - Accommodation -> POST /api/listings/accommodation
+    - Food service -> POST /api/listings/food
+3. Backend enforces PROPERTY_OWNER role and stores listing.
+4. Owner sees listing in /owner/listings.
+
+### 4.5 Chatbot Flow
+
+There are two routes currently:
+
+1. /api/assistant
+    - Parses text into structured filters.
+    - Queries Prisma for matching listings.
+    - Returns response text + match count.
+
+2. /api/chat
+    - Forwards prompt to Ollama at http://localhost:11434/api/generate.
+    - Returns LLaMA-generated reply.
+
+Note: If Ollama is not running, chatbot requests to /api/chat will fail with backend error.
+
+## 5. Local Setup (Exact Order)
+
+Run all commands from:
+
+student_accommodation_portal_full_chat_working_llama/app
+
+### 5.1 Prerequisites
+
+- Node.js 18+ recommended
+- npm
+- PostgreSQL running locally
+- Optional: Ollama running locally for /api/chat
+
+### 5.2 Install Dependencies
+
+```bash
+npm install
+```
+
+If dependency resolution fails:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+### 5.3 Configure Environment Variables
+
+Create or update .env in app folder:
+
+```env
+DATABASE_URL="postgresql://<username>:<password>@localhost:5432/<database_name>"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="<any-long-random-secret>"
+```
+
+### 5.4 Prisma Setup
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
+
+### 5.5 Seed Demo Data
+
+```bash
+npx prisma db seed
+```
+
+This creates universities, sample students, owners, and listings.
+
+### 5.6 Start The App
+
+```bash
+npm run dev
+```
+
+Open: http://localhost:3000
+
+## 6. Demo Credentials (From Seed Data)
+
+- Student test account:
+   - Email: john@doe.com
+   - Password: johndoe123
+
+Additional seeded accounts exist for students and owners (see scripts/seed.ts).
+
+## 7. API Summary For Evaluation
+
+- POST /api/signup
+   - Registers user, hashes password, optional owner listing creation
+- GET/POST /api/listings/accommodation
+   - Search and create accommodation listings
+- GET/POST /api/listings/food
+   - Search and create food service listings
+- POST /api/chat
+   - Sends prompt to local Ollama LLaMA backend
+- POST /api/assistant
+   - Structured filter-based assistant on Prisma data
+
+## 8. Common Issues And Fixes (Important)
+
+### Issue A: localhost:3000 not opening
+
+Checklist:
+
+1. Confirm you are in the correct folder before running dev server:
+
+```bash
+cd student_accommodation_portal_full_chat_working_llama/app
+```
+
+2. Start server:
+
+```bash
+npm run dev
+```
+
+3. If port is busy, free it (Windows PowerShell):
+
+```powershell
+netstat -ano | findstr :3000
+taskkill /PID <PID_FROM_ABOVE> /F
+```
+
+4. If build fails, reinstall and retry:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+```
+
+On Windows PowerShell, use:
+
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item -Force package-lock.json
+npm install
+npm run dev
+```
+
+### Issue B: Prisma or database errors
+
+1. Verify PostgreSQL is running.
+2. Verify DATABASE_URL in .env.
+3. Re-run:
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
+
+### Issue C: Login not working
+
+1. Ensure NEXTAUTH_URL and NEXTAUTH_SECRET are set.
+2. Ensure user exists (run seed if needed).
+3. Confirm password is correct and hashed via signup/seed flow.
+
+### Issue D: Chatbot LLaMA errors
+
+1. Ensure Ollama is installed.
+2. Start Ollama service.
+3. Pull model if needed:
+
+```bash
+ollama pull llama3
+```
+
+## 9. Evaluation Checklist For Examiners
+
+1. Launch app and verify landing page.
+2. Register/login as student and owner.
+3. Validate role redirects to correct dashboards.
+4. Search accommodation/food with filters.
+5. Create owner listings and verify listing visibility.
+6. Test chatbot:
+    - basic flow via UI chat widget
+    - LLaMA flow via /api/chat (if Ollama enabled)
+7. Review database updates in Prisma Studio:
+
+```bash
+npx prisma studio
+```
+
+## 10. Notes
+
+- This repository currently keeps the executable app inside the nested app directory.
+- For deployment, ensure production environment variables and database are configured properly.
+
+
