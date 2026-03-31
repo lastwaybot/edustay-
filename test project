@@ -1,0 +1,86 @@
+Perfect. Use this fast runbook and you can verify almost everything in about 20 minutes.
+
+Start everything
+Open Terminal A in project app folder:
+npm run dev
+Open Terminal B in same folder:
+npx prisma migrate status
+Expected:
+Dev server says Ready
+Prisma says Database schema is up to date
+Check where errors appear
+
+Backend/runtime errors: Terminal A
+
+API status and payload errors: Browser DevTools → Network tab
+
+Frontend JS errors: Browser DevTools → Console
+
+Database data check: pgAdmin tables (users, listings, reviews)
+
+Run full user flow (manual UI)
+
+Register owner:
+http://localhost:3000/auth/register
+
+Login owner:
+http://localhost:3000/auth/login
+
+Add listing:
+http://localhost:3000/owner/add-listing
+
+Verify owner listing view:
+http://localhost:3000/owner/listings
+
+Verify student discovery:
+http://localhost:3000/student/accommodation
+http://localhost:3000/student/food
+
+Run chatbot checks
+
+App chat page:
+http://localhost:3000/chatbot
+
+If local LLM is used, verify chat endpoint behavior:
+
+Success response on valid message
+Friendly error if model backend is unavailable
+Quick API sanity checks (expected results)
+
+GET /api/listings/accommodation → 200
+
+GET /api/listings/food → 200
+
+GET /api/auth/session → 200
+
+POST /api/listings/accommodation without login → 401
+
+POST /api/listings/food without login → 401
+
+POST /api/signup invalid payload → 400
+
+Where to inspect code quickly
+
+Signup API: route.ts
+
+Accommodation API: route.ts
+
+Food API: route.ts
+
+Auth API: student_accommodation_portal_full_chat_working_llama/app/app/api/auth/[...nextauth]/route.ts
+
+Chat API: route.ts
+
+Assistant API: route.ts
+
+Fast pass criteria (ship-check)
+
+No red errors in dev terminal during above flow
+
+Owner can create listing successfully
+
+Student can see listing
+
+Auth-protected APIs block unauthenticated requests
+
+DB rows are created correctly in pgAdmin
