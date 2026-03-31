@@ -214,6 +214,7 @@ async function main() {
     const accommodation = await prisma.accommodationListing.create({
       data: {
         ...accommodationInfo,
+        dailyRate: Math.max(1, Math.round(accommodationInfo.monthlyRent / 30)),
         roomType: accommodationInfo.roomType as any,
         accommodationType: accommodationInfo.accommodationType as any,
         foodPreference: accommodationInfo.foodPreference as any
